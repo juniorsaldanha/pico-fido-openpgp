@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  esp32-s3:
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.4
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0 # make-combo.sh counts pico-fido's commits for the build number
+      - run: apt-get -qq update && apt-get -qq install -y rsync
+      - name: Build
+        shell: bash
+        run: |
+          ./make-combo.sh upstream/pico-fido upstream/pico-openpgp build/combo
+          . "$IDF_PATH/export.sh" >/dev/null
+          idf.py -C build/combo -B build/combo/build-esp -DIDF_TARGET=esp32s3 -DENABLE_EDDSA=1 build
+          name=pico_fido+openpgp_esp32-s3_${GITHUB_REF_NAME//\//-}_app-0x20000.bin
+          cp build/combo/build-esp/pico_fido.bin "$name"
+          sha256sum "$name" > "$name.sha256"
+          echo "BIN=$name" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BIN }}
+          path: ${{ env.BIN }}*
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.BIN }}*
+          generate_release_notes: true

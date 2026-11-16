@@ -9,10 +9,20 @@ Upstream ships FIDO (with OATH/OTP) and OpenPGP (with PIV) as separate firmwares
 has either passkeys or an OpenPGP card. `make-combo.sh` builds one source tree with both, so the
 same key can hold passkeys and an `ssh-rsa` key on the OpenPGP card.
 
+The upstream sources are submodules under `upstream/`, pinned to the tested commits. Build the
+ESP32-S3 image (Linux, GNU sed; CI runs this in `espressif/idf:v5.5.4`):
+
 ```sh
-./make-combo.sh <pico-fido checkout> <pico-openpgp checkout> <out dir>   # Linux (GNU sed)
-cd <out dir> && idf.py -B build-esp -DENABLE_EDDSA=1 build                # ESP32-S3
+git clone --recursive <this repo> && cd pico-fido-openpgp
+./make-combo.sh upstream/pico-fido upstream/pico-openpgp build/combo
+idf.py -C build/combo -B build/combo/build-esp -DIDF_TARGET=esp32s3 -DENABLE_EDDSA=1 build
 ```
+
+The image is `build/combo/build-esp/pico_fido.bin`; flash it to the app partition at 0x20000.
+CI builds it on every push and attaches it, with its sha256, to releases tagged `v*`.
+
+To move to newer upstream: check out the new commits in `upstream/*`, rebuild, rerun the checks
+below, then commit the submodule pins.
 
 What it changes:
 
@@ -40,6 +50,8 @@ What it changes:
     command's sequence number
 - CCID and libcvc on; admin-less PIN mode on for non-ESP builds only (as upstream); the build
   number pinned to the pico-fido checkout's
+- ESP32-S3 main task stack raised to 16 KB (`CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384`); pico-fido
+  8.2 boot-loops with a stack overflow in the main task without it
 
 Checked against pico-fido 99337e1 + pico-openpgp 9b23276 (emulator unless noted):
 
@@ -51,8 +63,11 @@ Checked against pico-fido 99337e1 + pico-openpgp 9b23276 (emulator unless noted)
 - pico-openpgp's suites: PIV 279 passed (same); OpenPGP 1121 passed, the same 9 vault failures
   as plain pico-openpgp, plus `test_management_applet_config`, which expects an OpenPGP-only
   capability list
-- the app's OpenPGP/SSH live tests (`ci/emulator/run.sh`), with ssh logins through the agent
-- ESP32-S3: 752 KB app (1 MB slot), +3.6 KB static RAM over FIDO alone
+- Pico Key Manager's OpenPGP/SSH live tests (`ci/emulator/run.sh` there), with ssh logins
+  through the agent
+- ESP32-S3: 752 KB app (1 MB slot), +3.6 KB static RAM over FIDO alone; runs on a real key
 
-pico-fido 8.2 on ESP32-S3 also needs `CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384` in `sdkconfig`;
-without it, it boot-loops with a stack overflow in the main task.
+## License
+
+AGPL-3.0, as pico-fido and pico-openpgp (`LICENSE`). If you give someone a built image, give
+them this repo's source with it.

@@ -1,0 +1,6 @@
+[submodule "upstream/pico-fido"]
+	path = upstream/pico-fido
+	url = https://github.com/polhenarejos/pico-fido.git
+[submodule "upstream/pico-openpgp"]
+	path = upstream/pico-openpgp
+	url = https://github.com/polhenarejos/pico-openpgp.git
