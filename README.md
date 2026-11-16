@@ -1,4 +1,8 @@
-# Pico FIDO + Pico OpenPGP in one firmware
+# Pico FIDO + Pico OpenPGP in one firmware (unofficial)
+
+> **Unofficial.** Not made, tested or supported by [pico-keys](https://github.com/polhenarejos);
+> don't report problems with this build upstream. ESP32-S3 only. Flashing it writes the app slot
+> (0x20000) and keeps the bootloader and the key's data, but take a flash backup first.
 
 > **History:** the first combined build broke passkey listing on a real key. Both applets create
 > files at runtime as `prefix << 8 | slot`, and OpenPGP's key containers (0xD0–0xD5) landed in
@@ -19,7 +23,9 @@ idf.py -C build/combo -B build/combo/build-esp -DIDF_TARGET=esp32s3 -DENABLE_EDD
 ```
 
 The image is `build/combo/build-esp/pico_fido.bin`; flash it to the app partition at 0x20000.
-CI builds it on every push and attaches it, with its sha256, to releases tagged `v*`.
+CI builds it on every push and attaches it, with its sha256, to releases tagged `v*`
+(`v<pico-fido version>-<build>`, e.g. `v8.2.0-1`). Pico Key Manager installs these releases from
+its Firmware page.
 
 To move to newer upstream: check out the new commits in `upstream/*`, rebuild, rerun the checks
 below, then commit the submodule pins.

@@ -24,7 +24,7 @@ jobs:
           ./make-combo.sh upstream/pico-fido upstream/pico-openpgp build/combo
           . "$IDF_PATH/export.sh" >/dev/null
           idf.py -C build/combo -B build/combo/build-esp -DIDF_TARGET=esp32s3 -DENABLE_EDDSA=1 build
-          name=pico_fido+openpgp_esp32-s3_${GITHUB_REF_NAME//\//-}_app-0x20000.bin
+          name=pico_fido+openpgp-unofficial_esp32-s3_${GITHUB_REF_NAME//\//-}_app-0x20000.bin
           cp build/combo/build-esp/pico_fido.bin "$name"
           sha256sum "$name" > "$name.sha256"
           echo "BIN=$name" >> "$GITHUB_ENV"
